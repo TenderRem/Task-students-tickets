@@ -1,0 +1,159 @@
+/*
+Даны 2 списка, содержащих фамилии учащихся и номера экзаменационных билетов. 
+Число пересчета для билетов - Е, для учащихся - К. Определить номера билетов, вытащенных учащимися.
+*/
+
+#include<iostream>
+#include<Windows.h>
+#include <cstdlib>
+#include <ctime>
+using namespace std;
+
+struct Exam
+{
+	string fam;
+	int bilet;
+	Exam* next;
+};
+
+Exam* init(int bilet, string fam);
+void push(Exam*& tail, int bilet, string fam);
+Exam* distribute(Exam*& fams, Exam*& bilets, int E, int K);
+Exam pop(Exam*& current, Exam*& tail, int k);
+void del(Exam*& current, Exam*& tail);
+void print(Exam* tail);
+
+int main()
+{
+	SetConsoleOutputCP(1251);
+	srand(time(0));
+    /*генерируем кольцо из номеров билетов*/
+    int n = 1 + rand() % 7;
+    Exam* bilets = NULL;
+    for (int i = 1; i <= n; i++) push(bilets, i, " ");
+
+    /*генерируем кольцо из фамилий студентов*/
+    string surname;
+    Exam* fams = NULL;
+    n = 1 + rand() % 7;
+    cout << "Введите " << n << " фамилии: ";
+    for (int i = 0; i < n; i++)
+    {
+        cin >> surname;
+        push(fams, 0, surname);
+    }
+
+    cout << "\nСтуденты: " << endl;
+    print(fams);
+    cout << "Билеты: " << endl;
+    print(bilets);
+
+    int E, K;
+    cout << "\nЧисло пересчёта для студентов K: ";
+    cin >> K;
+    cout << "Число пересчёта для билетов E: ";
+    cin >> E;
+
+    Exam* students = distribute(fams, bilets, E, K);
+    cout << "\nРаспределение билетов между студентами: " << endl;
+    print(students);
+	return 0;
+}
+
+Exam* init(int bilet, string fam)
+{
+    Exam* tail = new Exam;
+    tail->next = tail;
+    tail->bilet = bilet;
+    tail->fam = fam;
+    return tail;
+}
+
+void push(Exam*& tail, int bilet, string fam)
+{
+    if (!tail) tail = init(bilet, fam);
+    else
+    {
+        Exam* add = new Exam;
+        add->bilet = bilet;
+        add->fam = fam;
+        add->next = tail->next;
+        tail->next = add;
+        tail = add;
+    }
+}
+
+Exam* distribute(Exam*& fams, Exam*& bilets, int E, int K)
+{
+    Exam* students = NULL;
+    Exam* curFam = fams, * curBilet = bilets;
+
+    int pop_bilet;
+    string pop_fam;
+    while (fams->next != fams && bilets->next != bilets)
+    {
+        pop_bilet = pop(curBilet, bilets, E).bilet;
+        pop_fam = pop(curFam, fams, K).fam;
+        push(students, pop_bilet, pop_fam);
+    }
+
+    if (fams->next != fams) pop_fam = pop(curFam, fams, K).fam;
+    else pop_fam = fams->fam;
+    if (bilets->next != bilets) pop_bilet = pop(curBilet, bilets, E).bilet;
+    else pop_bilet = bilets->bilet;
+
+    push(students, pop_bilet, pop_fam);
+    delete fams;
+    delete bilets;
+    return students;
+}
+
+Exam pop(Exam*& current, Exam*& tail, int i)
+{
+    Exam find;
+    for (int k = 0; k < i - 1; k++) current = current->next;
+    find.bilet = current->next->bilet;
+    find.fam = current->next->fam;
+    del(current, tail);
+    return find;
+}
+
+void del(Exam*& current, Exam*& tail)
+{
+    Exam* head = tail->next;
+    if (current->next == head)          //если удаляем голову
+    {
+        Exam* buf = head;
+        head = head->next;
+        tail->next = head;
+        delete buf;
+    }
+    else if (current->next == tail)     //если удаляем хвост
+    {
+        delete tail;
+        tail = current;
+        tail->next = head;
+    }
+    else
+    {
+        Exam* buf = current->next;
+        current->next = buf->next;
+        delete buf;
+    }
+}
+
+void print(Exam* tail)
+{
+    if (!tail) cout << "Пусто!" << endl;
+    else
+    {
+        Exam* head = tail->next;
+        do
+        {
+            if (head->bilet != 0) cout << head->bilet << " ";
+            if (head->fam != " ") cout << head->fam << endl;
+            head = head->next;
+        } while (head != tail->next);
+        cout << endl;
+    }
+}
